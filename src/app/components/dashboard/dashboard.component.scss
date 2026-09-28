@@ -1,0 +1,142 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #1a2332;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  background: #fff;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  padding: 16px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #475467;
+
+  select,
+  input {
+    padding: 8px 10px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    min-width: 160px;
+  }
+}
+
+.apply-btn,
+.clear-btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.apply-btn {
+  background: #2563eb;
+  color: #fff;
+
+  &:hover {
+    background: #1d4fd8;
+  }
+}
+
+.clear-btn {
+  background: #f2f4f7;
+  color: #344054;
+
+  &:hover {
+    background: #e4e7ec;
+  }
+}
+
+.totals {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.total-item {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #667085;
+  }
+
+  strong {
+    font-size: 1.1rem;
+    color: #101828;
+  }
+}
+
+.table-wrap {
+  margin-top: 20px;
+  background: #fff;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+th {
+  background: #f9fafb;
+  color: #667085;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+td.balance {
+  font-weight: 600;
+  color: #b42318;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: #98a2b3;
+}
+
+@media (max-width: 640px) {
+  .totals {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -1,0 +1,31 @@
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #101828;
+  color: #fff;
+
+  .brand {
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  .links {
+    display: flex;
+    gap: 20px;
+
+    a {
+      color: #cfd4dc;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 6px 0;
+      border-bottom: 2px solid transparent;
+
+      &.active {
+        color: #fff;
+        border-bottom-color: #2563eb;
+      }
+    }
+  }
+}

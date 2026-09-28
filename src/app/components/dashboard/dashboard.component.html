@@ -1,0 +1,87 @@
+<div class="page">
+  <h1>Dashboard</h1>
+
+  <div class="filter-bar">
+    <label class="field">
+      <span>Client</span>
+      <select [(ngModel)]="filters.clientId">
+        <option value="">All clients</option>
+        <option *ngFor="let c of clients$ | async" [value]="c.id">{{ c.name }}</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>From</span>
+      <input type="date" [(ngModel)]="filters.from" />
+    </label>
+
+    <label class="field">
+      <span>To</span>
+      <input type="date" [(ngModel)]="filters.to" />
+    </label>
+
+    <button class="apply-btn" (click)="applyFilters()">Apply</button>
+    <button class="clear-btn" (click)="clearFilters()">Clear</button>
+  </div>
+
+  <div class="totals" *ngIf="totals$ | async as t">
+    <div class="total-item">
+      <span>Total Quantity</span>
+      <strong>{{ t.quantity.toFixed(2) }} L</strong>
+    </div>
+    <div class="total-item">
+      <span>Total Amount</span>
+      <strong>₹{{ t.amount.toFixed(2) }}</strong>
+    </div>
+    <div class="total-item">
+      <span>Total After TDS</span>
+      <strong>₹{{ t.afterTds.toFixed(2) }}</strong>
+    </div>
+    <div class="total-item">
+      <span>Total Credit</span>
+      <strong>₹{{ t.credit.toFixed(2) }}</strong>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sr.</th>
+          <th>Date</th>
+          <th>Bill No.</th>
+          <th>Client</th>
+          <th>Qty (L)</th>
+          <th>Rate</th>
+          <th>Amount</th>
+          <th>Disc %</th>
+          <th>Disc Amt</th>
+          <th>TDS %</th>
+          <th>TDS Amt</th>
+          <th>After TDS</th>
+          <th>Credit</th>
+          <th>Debit Bal.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of transactions$ | async; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ t.date }}</td>
+          <td>{{ t.billNo }}</td>
+          <td>{{ t.clientName }}</td>
+          <td>{{ t.quantity }}</td>
+          <td>{{ t.rate }}</td>
+          <td>{{ t.amount.toFixed(2) }}</td>
+          <td>{{ t.discountPct }}%</td>
+          <td>{{ t.discountAmount.toFixed(2) }}</td>
+          <td>{{ t.tdsPct }}%</td>
+          <td>{{ t.tdsAmount.toFixed(2) }}</td>
+          <td>{{ t.afterTdsAmount.toFixed(2) }}</td>
+          <td>{{ t.creditAmount.toFixed(2) }}</td>
+          <td class="balance">{{ t.debitBalance.toFixed(2) }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="empty" *ngIf="(transactions$ | async)?.length === 0">No transactions match these filters.</p>
+  </div>
+</div>

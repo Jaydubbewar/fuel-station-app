@@ -1,0 +1,50 @@
+<div class="page">
+  <h1>New Client</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="card">
+    <div class="grid">
+      <label class="field">
+        <span>Client Name</span>
+        <input type="text" formControlName="name" placeholder="Enter client name" />
+        <small class="validation" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+          Client name is required.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Mobile</span>
+        <input type="tel" formControlName="mobile" placeholder="Enter mobile number" />
+      </label>
+
+      <label class="field full-width">
+        <span>Address</span>
+        <textarea formControlName="address" rows="3" placeholder="Enter address"></textarea>
+      </label>
+
+      <label class="field">
+        <span>GST Number *</span>
+        <input type="text" formControlName="gstNumber" placeholder="Enter GST number" required />
+        <small class="validation" *ngIf="form.controls.gstNumber.touched && form.controls.gstNumber.invalid">
+          GST number is required.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Opening Balance (₹)</span>
+        <input type="number" formControlName="openingBalance" step="0.01" />
+      </label>
+
+      <label class="active-field">
+        <input type="checkbox" formControlName="isActive" />
+        <span>Active client</span>
+      </label>
+    </div>
+
+    <button type="submit" class="submit-btn" [disabled]="submitting">
+      {{ submitting ? 'Saving...' : 'Create Client' }}
+    </button>
+
+    <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</div>

@@ -1,0 +1,86 @@
+<div class="page">
+  <h1>New Bill Entry</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="card">
+    <div class="grid">
+      <label class="field">
+        <span>Date</span>
+        <input type="date" formControlName="date" />
+      </label>
+
+      <label class="field">
+        <span>Bill No.</span>
+        <input type="text" formControlName="billNo" placeholder="e.g. 1042" />
+        <small class="validation" *ngIf="form.controls.billNo.touched && form.controls.billNo.invalid">
+          Bill number is required.
+        </small>
+      </label>
+
+      <label class="field client-field">
+        <span>Client</span>
+        <select formControlName="clientId">
+          <option value="" disabled>Select client</option>
+          <option *ngFor="let c of clients$ | async" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <small class="validation" *ngIf="form.controls.clientId.touched && form.controls.clientId.invalid">
+          Select a client.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Quantity (L)</span>
+        <input type="number" formControlName="quantity" step="0.01" min="0" />
+        <small class="validation" *ngIf="form.controls.quantity.touched && form.controls.quantity.invalid">
+          Enter a quantity greater than zero.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Rate (₹/L)</span>
+        <input type="number" formControlName="rate" step="0.01" min="0" />
+      </label>
+
+      <label class="field">
+        <span>Discount %</span>
+        <input type="number" formControlName="discountPct" step="0.01" min="0" />
+      </label>
+
+      <label class="field">
+        <span>TDS %</span>
+        <input type="number" formControlName="tdsPct" step="0.01" min="0" />
+      </label>
+
+      <label class="field">
+        <span>Credit Amount (₹)</span>
+        <input type="number" formControlName="creditAmount" step="0.01" min="0" />
+      </label>
+    </div>
+
+    <div class="preview">
+      <div class="preview-item">
+        <span>Amount</span>
+        <strong>₹{{ preview.amount.toFixed(2) }}</strong>
+      </div>
+      <div class="preview-item">
+        <span>Discount Amt</span>
+        <strong>₹{{ preview.discountAmount.toFixed(2) }}</strong>
+      </div>
+      <div class="preview-item">
+        <span>TDS Amt</span>
+        <strong>₹{{ preview.tdsAmount.toFixed(2) }}</strong>
+      </div>
+      <div class="preview-item highlight">
+        <span>After TDS Amount</span>
+        <strong>₹{{ preview.afterTdsAmount.toFixed(2) }}</strong>
+      </div>
+    </div>
+    <p class="note">Debit balance shown after saving — it depends on the client's running total.</p>
+
+    <button type="submit" class="submit-btn" [disabled]="submitting">
+      {{ submitting ? 'Saving...' : 'Save Bill' }}
+    </button>
+
+    <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</div>
