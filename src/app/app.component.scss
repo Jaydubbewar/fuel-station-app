@@ -2,9 +2,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   padding: 14px 24px;
   background: #101828;
   color: #fff;
+
+  .nav-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   .brand {
     font-weight: 700;
@@ -13,7 +20,12 @@
 
   .links {
     display: flex;
+    align-items: center;
     gap: 20px;
+
+    a {
+      white-space: nowrap;
+    }
 
     a {
       color: #cfd4dc;
@@ -26,6 +38,134 @@
         color: #fff;
         border-bottom-color: #2563eb;
       }
+    }
+
+    .logout {
+      padding: 6px 10px;
+      border: 1px solid #667085;
+      border-radius: 6px;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+
+      &:hover {
+        background: #344054;
+      }
+    }
+
+    .export-backup {
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 6px;
+      background: #2563eb;
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+
+      &:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .menu-toggle {
+    display: none;
+  }
+
+  .export-status {
+    flex-basis: 100%;
+    text-align: right;
+    font-size: 0.82rem;
+  }
+
+  .export-success {
+    color: #a6f4c5;
+  }
+
+  .export-error {
+    color: #fda29b;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .top-nav {
+    gap: 10px 16px;
+
+    .nav-heading {
+      flex: 0 0 100%;
+    }
+
+    .links {
+      flex: 1 1 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+    }
+
+    .export-status {
+      text-align: center;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .top-nav {
+    display: block;
+    padding: 10px 14px;
+
+    .nav-heading {
+      min-height: 44px;
+    }
+
+    .menu-toggle {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid #667085;
+      border-radius: 8px;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .links {
+      display: none;
+      align-items: stretch;
+      flex-direction: column;
+      gap: 4px;
+      padding-top: 10px;
+
+      &.open {
+        display: flex;
+      }
+
+      a {
+        min-height: 44px;
+        padding: 11px 10px;
+        border: 0;
+        border-radius: 6px;
+
+        &.active {
+          background: #1d2939;
+        }
+      }
+
+      .export-backup,
+      .logout {
+        min-height: 44px;
+        margin-top: 4px;
+      }
+    }
+
+    .export-status {
+      margin-top: 8px;
+      text-align: left;
+      overflow-wrap: anywhere;
     }
   }
 }

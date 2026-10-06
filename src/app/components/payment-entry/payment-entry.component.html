@@ -1,0 +1,66 @@
+<div class="page">
+  <h1>{{ paymentToEdit ? 'Edit Payment' : 'New Payment' }}</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="card">
+    <div class="grid">
+      <label class="field">
+        <span>Payment Date</span>
+        <input type="date" formControlName="paymentDate" />
+        <small class="validation" *ngIf="form.controls.paymentDate.touched && form.controls.paymentDate.invalid">
+          Payment date is required.
+        </small>
+      </label>
+
+      <label class="field" *ngIf="!paymentToEdit">
+        <span>Client</span>
+        <select formControlName="clientId">
+          <option value="" disabled>Select client</option>
+          <option *ngFor="let client of clients$ | async" [value]="client.id">{{ client.name }}</option>
+        </select>
+        <small class="validation" *ngIf="form.controls.clientId.touched && form.controls.clientId.invalid">
+          Select a client.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Amount (₹)</span>
+        <input type="number" formControlName="amount" step="0.01" min="0.01" />
+        <small class="validation" *ngIf="form.controls.amount.touched && form.controls.amount.invalid">
+          Enter an amount greater than zero.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Payment Mode</span>
+        <select formControlName="paymentMode">
+          <option value="" disabled>Select payment mode</option>
+          <option *ngFor="let mode of paymentModes" [value]="mode.value">{{ mode.label }}</option>
+        </select>
+        <small class="validation" *ngIf="form.controls.paymentMode.touched && form.controls.paymentMode.invalid">
+          Select a payment mode.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Reference Number (optional)</span>
+        <input type="text" formControlName="referenceNumber" placeholder="Enter reference number" />
+      </label>
+
+      <label class="field full-width">
+        <span>Remarks (optional)</span>
+        <textarea formControlName="remarks" rows="3" placeholder="Add a note"></textarea>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <a *ngIf="!paymentToEdit" routerLink="/clients" class="cancel-btn">Cancel</a>
+      <button *ngIf="paymentToEdit" type="button" class="cancel-btn" (click)="cancelled.emit()">Cancel</button>
+      <button type="submit" class="submit-btn" [disabled]="submitting">
+        {{ submitting ? 'Saving...' : (paymentToEdit ? 'Save Changes' : 'Record Payment') }}
+      </button>
+    </div>
+
+    <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</div>

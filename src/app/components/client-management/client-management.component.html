@@ -1,0 +1,77 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Client Management</h1>
+      <p>View and manage active clients.</p>
+    </div>
+    <a routerLink="/new-client" class="add-btn">Add Client</a>
+  </div>
+
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <section class="deactivation-prompt" *ngIf="pendingDeactivationClient as client" role="dialog" aria-modal="true" aria-labelledby="deactivation-title">
+    <h2 id="deactivation-title">Deactivate {{ client.name }}?</h2>
+    <p>This removes the client from active lists. Their records and transaction history are retained. You can reactivate the client later.</p>
+    <p>The backup includes all clients, transactions, and payments, not only this client.</p>
+    <div class="prompt-actions">
+      <button type="button" class="backup-btn" [disabled]="deactivatingClientId === client.id" (click)="deactivateClient(true)">
+        {{ deactivatingClientId === client.id ? 'Processing...' : 'Export Backup & Deactivate' }}
+      </button>
+      <button type="button" class="deactivate-btn" [disabled]="deactivatingClientId === client.id" (click)="deactivateClient(false)">
+        Deactivate Without Backup
+      </button>
+      <button type="button" class="cancel-btn" [disabled]="deactivatingClientId === client.id" (click)="cancelDeactivation()">
+        Cancel
+      </button>
+    </div>
+  </section>
+
+  <ng-container *ngIf="clients$ | async as clients">
+    <div class="table-wrap" *ngIf="clients.length > 0; else noClients">
+      <table>
+        <thead>
+          <tr>
+            <th>Client Name</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>GST Number</th>
+            <th>Opening Balance</th>
+            <th>Opening Balance Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let client of clients">
+            <td>{{ client.name }}</td>
+            <td>{{ client.phone || '—' }}</td>
+            <td>{{ client.address || '—' }}</td>
+            <td>{{ client.gstNumber || '—' }}</td>
+            <td>{{ client.openingBalance | currency:'INR':'symbol':'1.2-2' }}</td>
+            <td>{{ client.openingBalanceDate.toDate() | date:'mediumDate' }}</td>
+            <td>
+              <span class="status" [class.inactive]="!client.isActive">
+                {{ client.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="actions">
+              <a [routerLink]="['/clients', client.id, 'edit']" class="edit-btn">Edit</a>
+              <button *ngIf="client.isActive; else reactivateAction" type="button" class="deactivate-btn" [disabled]="deactivatingClientId === client.id" (click)="requestDeactivation(client)">
+                Deactivate
+              </button>
+              <ng-template #reactivateAction>
+                <button type="button" class="reactivate-btn" [disabled]="reactivatingClientId === client.id" (click)="reactivateClient(client)">
+                  {{ reactivatingClientId === client.id ? 'Reactivating...' : 'Reactivate' }}
+                </button>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noClients>
+      <div class="empty">No clients found. Add a client to get started.</div>
+    </ng-template>
+  </ng-container>
+</div>

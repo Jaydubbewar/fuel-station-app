@@ -1,5 +1,7 @@
 .page {
-  max-width: 1100px;
+  width: 100%;
+  min-width: 0;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 32px 20px;
 }
@@ -68,11 +70,12 @@ h1 {
 .totals {
   margin-top: 18px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
 .total-item {
+  min-width: 0;
   background: #f9fafb;
   border-radius: 10px;
   padding: 14px 16px;
@@ -88,12 +91,16 @@ h1 {
   }
 
   strong {
+    overflow-wrap: anywhere;
     font-size: 1.1rem;
     color: #101828;
   }
 }
 
 .table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin-top: 20px;
   background: #fff;
   border: 1px solid #e4e7ec;
@@ -101,8 +108,13 @@ h1 {
   overflow-x: auto;
 }
 
+.ledger-wrap table {
+  min-width: 1550px;
+}
+
 table {
   width: 100%;
+  min-width: 1100px;
   border-collapse: collapse;
   font-size: 0.85rem;
   white-space: nowrap;
@@ -124,9 +136,61 @@ th {
   letter-spacing: 0.03em;
 }
 
-td.balance {
-  font-weight: 600;
+th.after-tds-value,
+td.after-tds-value {
   color: #b42318;
+  font-weight: 700;
+}
+
+th.payment-value,
+td.payment-value {
+  color: #027a48;
+  font-weight: 700;
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.export-btn {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: #1d4fd8;
+}
+
+.export-btn:disabled {
+  background: #98a2b3;
+  cursor: not-allowed;
+}
+
+td.balance {
+  font-weight: 700;
+}
+
+td.balance.negative-balance {
+  color: #b42318;
+}
+
+td.balance.positive-balance {
+  color: #027a48;
+}
+
+.opening-row {
+  font-weight: 600;
+  background: #f9fafb;
 }
 
 .empty {
@@ -135,8 +199,168 @@ td.balance {
   color: #98a2b3;
 }
 
-@media (max-width: 640px) {
+.loading {
+  margin-top: 18px;
+  color: #475467;
+}
+
+.filter-hint {
+  margin: 8px 4px 0;
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.error {
+  margin-top: 18px;
+  color: #b42318;
+}
+
+.row-actions {
+  min-width: 220px;
+  white-space: normal;
+}
+
+.row-actions button {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 40px;
+  margin-bottom: 4px;
+}
+
+.edit-action {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.payment-edit-action {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.delete-action {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.print-action {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.payment-delete-action {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(16, 24, 40, 0.55);
+}
+
+.edit-dialog {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 12px;
+  background: #fff;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .page {
+    padding: 26px 18px;
+  }
+
   .totals {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filter-bar {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 20px 14px;
+  }
+
+  .filter-bar {
+    align-items: stretch;
+    padding: 12px;
+
+    .field {
+      flex: 1 1 100%;
+      min-width: 0;
+
+      select,
+      input {
+        width: 100%;
+        min-width: 0;
+        min-height: 44px;
+      }
+    }
+  }
+
+  .apply-btn,
+  .clear-btn {
+    flex: 1 1 120px;
+    min-height: 44px;
+  }
+
+  .totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .total-item {
+    padding: 12px;
+  }
+
+  .report-actions {
+    justify-content: stretch;
+  }
+
+  .export-btn {
+    width: 100%;
+  }
+
+  .edit-overlay {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .edit-dialog {
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .row-actions button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .page {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .totals {
+    grid-template-columns: 1fr;
   }
 }

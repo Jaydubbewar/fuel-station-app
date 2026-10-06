@@ -1,52 +1,44 @@
-export interface Client {
-  id?: string;
-  name: string;
-  currentBalance: number; // running debit balance (positive = client owes us)
-  mobile?: string;
-  address?: string;
-  gstNumber?: string;
-  openingBalance?: number;
-  isActive?: boolean;
-  createdAt?: any;
-}
+import { Timestamp } from '@angular/fire/firestore';
 
-export interface ClientInput {
-  name: string;
-  mobile: string;
-  address: string;
-  gstNumber: string;
-  openingBalance: number;
-  isActive: boolean;
-}
+export type { ClientRecord as Client } from './client.model';
 
 export interface Transaction {
-  id?: string;
-  srNo?: number;          // display-only, derived from list order/date
-  date: string;            // 'yyyy-MM-dd'
-  billNo: string;
   clientId: string;
-  clientName: string;      // denormalized for easy display/filtering
-  quantity: number;        // liters
-
+  billNo: string;
+  transactionDate: Timestamp;
+  quantity: number;
   rate: number;
-  amount: number;          // quantity * rate
-
-  discountPct: number;
-  discountAmount: number;  // amount * discountPct / 100
-
-  tdsPct: number;
-  tdsAmount: number;       // (amount - discountAmount) * tdsPct / 100
-
-  afterTdsAmount: number;  // amount - discountAmount - tdsAmount
-
-  creditAmount: number;    // payment received against this bill, if any
-  debitBalance: number;    // running balance AFTER this transaction (snapshot)
-
-  createdAt?: any;
+  grossAmount: number;
+  discount: number;
+  netAmount: number;
+  tdsRate: number;
+  tdsAmount: number;
+  afterTdsAmount: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
-// Fields the user actually types in; everything else is derived.
-export type TransactionInput = Pick<
+export type TransactionRecord = Transaction & { id: string };
+
+export type TransactionCalculationInput = Pick<
   Transaction,
-  'date' | 'billNo' | 'clientId' | 'clientName' | 'quantity' | 'rate' | 'discountPct' | 'tdsPct' | 'creditAmount'
+  'quantity' | 'rate' | 'discount' | 'tdsRate'
 >;
+
+export type NewTransaction = Omit<
+  Transaction,
+  | 'grossAmount'
+  | 'netAmount'
+  | 'tdsAmount'
+  | 'afterTdsAmount'
+  | 'createdAt'
+  | 'updatedAt'
+>;
+
+export type TransactionInput = Omit<NewTransaction, 'transactionDate'> & {
+  transactionDate: Date | Timestamp;
+};
+
+export type TransactionChanges = Partial<Omit<NewTransaction, 'transactionDate'>> & {
+  transactionDate?: Date | Timestamp;
+};

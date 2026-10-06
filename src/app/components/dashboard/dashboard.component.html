@@ -4,7 +4,7 @@
   <div class="filter-bar">
     <label class="field">
       <span>Client</span>
-      <select [(ngModel)]="filters.clientId">
+      <select [(ngModel)]="filters.clientId" (ngModelChange)="onClientChanged($event)">
         <option value="">All clients</option>
         <option *ngFor="let c of clients$ | async" [value]="c.id">{{ c.name }}</option>
       </select>
@@ -20,68 +20,181 @@
       <input type="date" [(ngModel)]="filters.to" />
     </label>
 
+    <label class="field">
+      <span>Activity Type</span>
+      <select [(ngModel)]="filters.activityType">
+        <option value="ALL">All</option>
+        <option value="TRANSACTIONS">Transactions</option>
+        <option value="PAYMENTS" [disabled]="!filters.clientId">Payments</option>
+      </select>
+    </label>
+
     <button class="apply-btn" (click)="applyFilters()">Apply</button>
     <button class="clear-btn" (click)="clearFilters()">Clear</button>
   </div>
 
-  <div class="totals" *ngIf="totals$ | async as t">
-    <div class="total-item">
-      <span>Total Quantity</span>
-      <strong>{{ t.quantity.toFixed(2) }} L</strong>
+  <p class="filter-hint" *ngIf="!filters.clientId">
+    Payments are available only after selecting a specific client. The All clients view shows transactions only.
+  </p>
+
+  <p class="error" *ngIf="clientLoadError">{{ clientLoadError }}</p>
+
+  <ng-container *ngIf="view$ | async as vm">
+    <div class="report-actions">
+      <button
+        class="export-btn"
+        type="button"
+        [disabled]="!filters.clientId || vm.loading || !vm.selectedClient || !!vm.error"
+        (click)="downloadLedgerPdf(vm)">
+        Download Ledger PDF
+      </button>
     </div>
-    <div class="total-item">
-      <span>Total Amount</span>
-      <strong>₹{{ t.amount.toFixed(2) }}</strong>
-    </div>
-    <div class="total-item">
-      <span>Total After TDS</span>
-      <strong>₹{{ t.afterTds.toFixed(2) }}</strong>
-    </div>
-    <div class="total-item">
-      <span>Total Credit</span>
-      <strong>₹{{ t.credit.toFixed(2) }}</strong>
+
+    <p class="loading" *ngIf="vm.loading">Loading account activity...</p>
+    <p class="error" *ngIf="vm.error">{{ vm.error }}</p>
+    <p class="error" *ngIf="transactionActionError">{{ transactionActionError }}</p>
+    <p class="error" *ngIf="paymentActionError">{{ paymentActionError }}</p>
+
+    <ng-container *ngIf="!vm.loading && !vm.error">
+      <div class="totals">
+        <div class="total-item">
+          <span>Total Quantity</span>
+          <strong>{{ vm.totals.quantity | number:'1.2-2' }} L</strong>
+        </div>
+        <div class="total-item">
+          <span>Total Gross Amount</span>
+          <strong>₹{{ vm.totals.grossAmount | number:'1.2-2' }}</strong>
+        </div>
+        <div class="total-item">
+          <span>Total After TDS</span>
+          <strong>₹{{ vm.totals.afterTds | number:'1.2-2' }}</strong>
+        </div>
+        <div class="total-item" *ngIf="vm.totals.totalPayments !== null">
+          <span>Total Payments</span>
+          <strong>₹{{ vm.totals.totalPayments | number:'1.2-2' }}</strong>
+        </div>
+        <div class="total-item" *ngIf="vm.totals.currentBalance !== null">
+          <span>Current Balance</span>
+          <strong>₹{{ vm.totals.currentBalance | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="table-wrap" *ngIf="!vm.selectedClient">
+        <table>
+          <thead>
+            <tr>
+              <th>Sr.</th>
+              <th>Date</th>
+              <th>Bill No.</th>
+              <th>Client</th>
+              <th>Qty (L)</th>
+              <th>Rate</th>
+              <th>Amount</th>
+              <th>Disc Amt</th>
+              <th>TDS %</th>
+              <th>TDS Amt</th>
+              <th>After TDS</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of vm.transactions; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ t.transactionDate.toDate() | date:'shortDate' }}</td>
+              <td>{{ t.billNo }}</td>
+              <td>{{ (clientNames$ | async)?.get(t.clientId) ?? t.clientId }}</td>
+              <td>{{ t.quantity | number:'1.2-2' }}</td>
+              <td>{{ t.rate | number:'1.2-2' }}</td>
+              <td>{{ t.grossAmount | number:'1.2-2' }}</td>
+              <td>{{ t.discount | number:'1.2-2' }}</td>
+              <td>{{ (t.tdsRate * 100).toFixed(2) }}%</td>
+              <td>{{ t.tdsAmount | number:'1.2-2' }}</td>
+              <td>{{ t.afterTdsAmount | number:'1.2-2' }}</td>
+              <td class="row-actions">
+                <button type="button" class="edit-action" (click)="editTransaction(t)">Edit</button>
+                <button type="button" class="delete-action" (click)="deleteTransaction(t)">Delete</button>
+                <button type="button" class="print-action" (click)="printBill(t)">Print Bill</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="empty" *ngIf="vm.transactions.length === 0">No transactions match these filters.</p>
+      </div>
+
+      <div class="table-wrap ledger-wrap" *ngIf="vm.selectedClient">
+        <table>
+          <thead>
+            <tr>
+              <th><b>Date</b></th>
+              <th><b>Type</b></th>
+              <th><b>Bill No. / Reference</b></th>
+              <th><b>Quantity</b></th>
+              <th><b>Rate</b></th>
+              <th><b>Amount</b></th>
+              <th><b>Discount</b></th>
+              <th><b>TDS %</b></th>
+              <th><b>TDS Amount</b></th>
+              <th class="after-tds-value"><b>After TDS</b></th>
+              <th class="payment-value"><b>Payment</b></th>
+              <th><b>Balance</b></th>
+              <th><b>Actions</b></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of vm.ledger" [class.opening-row]="row.type === 'OPENING BALANCE'">
+              <td>{{ row.date | date:'shortDate' }}</td>
+              <td>{{ row.type }}</td>
+              <td>{{ row.reference || '—' }}</td>
+              <td>{{ row.quantity === null ? '—' : (row.quantity | number:'1.2-2') }}</td>
+              <td>{{ row.rate === null ? '—' : (row.rate | number:'1.2-2') }}</td>
+              <td>{{ row.amount === null ? '—' : (row.amount | number:'1.2-2') }}</td>
+              <td>{{ row.discount === null ? '—' : (row.discount | number:'1.2-2') }}</td>
+              <td>{{ row.tdsRate === null ? '—' : (row.tdsRate * 100 | number:'1.2-2') + '%' }}</td>
+              <td>{{ row.tdsAmount === null ? '—' : (row.tdsAmount | number:'1.2-2') }}</td>
+              <td class="after-tds-value"><b>{{ row.afterTds === null ? '—' : (row.afterTds | number:'1.2-2') }}</b></td>
+              <td class="payment-value"><b>{{ row.payment === null ? '—' : (row.payment | number:'1.2-2') }}</b></td>
+              <td class="balance" [class.negative-balance]="row.balance < 0" [class.positive-balance]="row.balance >= 0">
+                <b>{{ row.balance | number:'1.2-2' }}</b>
+              </td>
+              <td class="row-actions">
+                <ng-container *ngIf="row.transaction as transaction; else paymentRowActions">
+                  <button type="button" class="edit-action" (click)="editTransaction(transaction)">Edit</button>
+                  <button type="button" class="delete-action" (click)="deleteTransaction(transaction)">Delete</button>
+                  <button type="button" class="print-action" (click)="printBill(transaction)">Print Bill</button>
+                </ng-container>
+                <ng-template #paymentRowActions>
+                  <ng-container *ngIf="row.paymentRecord as payment; else noLedgerActions">
+                    <button type="button" class="payment-edit-action" (click)="editPayment(payment)">Edit Payment</button>
+                    <button type="button" class="payment-delete-action" (click)="deletePayment(payment)">Delete Payment</button>
+                  </ng-container>
+                </ng-template>
+                <ng-template #noLedgerActions>—</ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="empty" *ngIf="vm.ledger.length <= 1">No activity matches these filters.</p>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <div class="edit-overlay" *ngIf="editingTransaction as transaction" (click)="closeTransactionEditor()">
+    <div class="edit-dialog" (click)="$event.stopPropagation()">
+      <app-bill-entry
+        [transactionToEdit]="transaction"
+        (transactionSaved)="onTransactionSaved()"
+        (cancelled)="closeTransactionEditor()">
+      </app-bill-entry>
     </div>
   </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Sr.</th>
-          <th>Date</th>
-          <th>Bill No.</th>
-          <th>Client</th>
-          <th>Qty (L)</th>
-          <th>Rate</th>
-          <th>Amount</th>
-          <th>Disc %</th>
-          <th>Disc Amt</th>
-          <th>TDS %</th>
-          <th>TDS Amt</th>
-          <th>After TDS</th>
-          <th>Credit</th>
-          <th>Debit Bal.</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let t of transactions$ | async; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ t.date }}</td>
-          <td>{{ t.billNo }}</td>
-          <td>{{ t.clientName }}</td>
-          <td>{{ t.quantity }}</td>
-          <td>{{ t.rate }}</td>
-          <td>{{ t.amount.toFixed(2) }}</td>
-          <td>{{ t.discountPct }}%</td>
-          <td>{{ t.discountAmount.toFixed(2) }}</td>
-          <td>{{ t.tdsPct }}%</td>
-          <td>{{ t.tdsAmount.toFixed(2) }}</td>
-          <td>{{ t.afterTdsAmount.toFixed(2) }}</td>
-          <td>{{ t.creditAmount.toFixed(2) }}</td>
-          <td class="balance">{{ t.debitBalance.toFixed(2) }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="empty" *ngIf="(transactions$ | async)?.length === 0">No transactions match these filters.</p>
+  <div class="edit-overlay" *ngIf="editingPayment as payment" (click)="closePaymentEditor()">
+    <div class="edit-dialog" (click)="$event.stopPropagation()">
+      <app-payment-entry
+        [paymentToEdit]="payment"
+        (paymentSaved)="onPaymentSaved()"
+        (cancelled)="closePaymentEditor()">
+      </app-payment-entry>
+    </div>
   </div>
 </div>

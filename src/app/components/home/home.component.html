@@ -1,0 +1,186 @@
+<main class="page">
+  <header class="page-header">
+    <div>
+      <h1>Home</h1>
+      <p>Business overview and client balances</p>
+    </div>
+  </header>
+
+  <section class="filters" aria-label="Dashboard date filters">
+    <label class="field">
+      <span>Period</span>
+      <select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChanged($event)">
+        <option value="TODAY">Today</option>
+        <option value="THIS_WEEK">This Week</option>
+        <option value="THIS_MONTH">This Month</option>
+        <option value="THIS_YEAR">This Year</option>
+        <option value="CUSTOM">Custom date range</option>
+      </select>
+    </label>
+
+    <ng-container *ngIf="selectedPeriod === 'CUSTOM'">
+      <label class="field">
+        <span>From</span>
+        <input type="date" [(ngModel)]="customFrom" />
+      </label>
+      <label class="field">
+        <span>To</span>
+        <input type="date" [(ngModel)]="customTo" />
+      </label>
+      <button type="button" class="apply-btn" (click)="applyCustomRange()">Apply dates</button>
+    </ng-container>
+  </section>
+  <p class="filter-error" *ngIf="filterError" role="alert">{{ filterError }}</p>
+
+  <ng-container *ngIf="view$ | async as vm">
+    <p class="loading" *ngIf="vm.loading" role="status">Loading business data...</p>
+    <p class="error" *ngIf="vm.error" role="alert">{{ vm.error }}</p>
+
+    <ng-container *ngIf="!vm.loading && !vm.error">
+      <p class="empty-state" *ngIf="vm.empty">No business records found yet. Add a client, bill, or payment to get started.</p>
+
+      <div class="period-caption">
+        Showing {{ vm.range.start | date:'mediumDate' }} – {{ vm.range.end | date:'mediumDate' }}
+      </div>
+
+      <section class="kpis" aria-label="Business key performance indicators">
+        <article class="kpi-card">
+          <span>Total Sales</span>
+          <strong>{{ vm.totalSales | currency:'INR':'symbol':'1.2-2' }}</strong>
+        </article>
+        <article class="kpi-card">
+          <span>Total Sales (Liters)</span>
+          <strong>{{ vm.totalSalesLiters | number:'1.0-2' }} L</strong>
+        </article>
+        <article class="kpi-card">
+          <span>Total Payments Received</span>
+          <strong>{{ vm.totalPayments | currency:'INR':'symbol':'1.2-2' }}</strong>
+        </article>
+        <article class="kpi-card receivable">
+          <span>Amount Receivable</span>
+          <strong>{{ vm.amountReceivable | currency:'INR':'symbol':'1.2-2' }}</strong>
+        </article>
+        <article class="kpi-card credit">
+          <span>Client Credit</span>
+          <strong>{{ vm.clientCredit | currency:'INR':'symbol':'1.2-2' }}</strong>
+        </article>
+        <article class="kpi-card">
+          <span>Active Clients</span>
+          <strong>{{ vm.activeClients }}</strong>
+        </article>
+        <article class="kpi-card today">
+          <span>Today's Sales</span>
+          <strong>{{ vm.todaysSales | currency:'INR':'symbol':'1.2-2' }}</strong>
+        </article>
+        <article class="kpi-card today">
+          <span>Today's Payments</span>
+          <strong>{{ vm.todaysPayments | currency:'INR':'symbol':'1.2-2' }}</strong>
+        </article>
+      </section>
+
+      <section class="chart-filters" aria-label="Chart client filter">
+        <label class="field">
+          <span>Charts by client</span>
+          <select [ngModel]="chartClientId" (ngModelChange)="onChartClientChanged($event)">
+            <option value="">All clients</option>
+            <option *ngFor="let client of vm.clients" [value]="client.id">{{ client.name }}</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="charts" aria-label="Daily sales and payment charts">
+        <article class="chart-card">
+          <h2>Daily Sales</h2>
+          <div class="chart-empty" *ngIf="vm.salesChart.empty">No sales in this period.</div>
+          <svg viewBox="0 0 900 280" role="img" aria-label="Daily sales by date">
+            <ng-container *ngFor="let tick of vm.salesChart.ticks">
+              <line x1="64" [attr.y1]="tick.y" x2="884" [attr.y2]="tick.y" class="grid-line" />
+              <text x="56" [attr.y]="tick.y + 4" text-anchor="end" class="axis-label">{{ tick.label }}</text>
+            </ng-container>
+            <line x1="64" y1="18" x2="64" y2="238" class="axis-line" />
+            <line x1="64" [attr.y1]="vm.salesChart.baseline" x2="884" [attr.y2]="vm.salesChart.baseline" class="axis-line" />
+            <ng-container *ngFor="let bar of vm.salesChart.bars">
+              <rect [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.color">
+                <title>{{ bar.clientName }} — {{ bar.label }}: {{ bar.value | currency:'INR':'symbol':'1.2-2' }}</title>
+              </rect>
+              <text *ngIf="bar.showLabel" [attr.x]="bar.x + bar.width / 2" y="260" text-anchor="middle" class="axis-label">{{ bar.label }}</text>
+            </ng-container>
+          </svg>
+          <span class="axis-title">Sales amount (₹)</span>
+          <div class="chart-legend" *ngIf="vm.salesChart.series.length">
+            <span class="legend-item" *ngFor="let series of vm.salesChart.series">
+              <i [style.backgroundColor]="series.color"></i>{{ series.name }}
+            </span>
+          </div>
+        </article>
+
+        <article class="chart-card">
+          <h2>Daily Payments</h2>
+          <div class="chart-empty" *ngIf="vm.paymentsChart.empty">No payments in this period.</div>
+          <svg viewBox="0 0 900 280" role="img" aria-label="Daily payments by date">
+            <ng-container *ngFor="let tick of vm.paymentsChart.ticks">
+              <line x1="64" [attr.y1]="tick.y" x2="884" [attr.y2]="tick.y" class="grid-line" />
+              <text x="56" [attr.y]="tick.y + 4" text-anchor="end" class="axis-label">{{ tick.label }}</text>
+            </ng-container>
+            <line x1="64" y1="18" x2="64" y2="238" class="axis-line" />
+            <line x1="64" [attr.y1]="vm.paymentsChart.baseline" x2="884" [attr.y2]="vm.paymentsChart.baseline" class="axis-line" />
+            <ng-container *ngFor="let bar of vm.paymentsChart.bars">
+              <rect [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.color">
+                <title>{{ bar.clientName }} — {{ bar.label }}: {{ bar.value | currency:'INR':'symbol':'1.2-2' }}</title>
+              </rect>
+              <text *ngIf="bar.showLabel" [attr.x]="bar.x + bar.width / 2" y="260" text-anchor="middle" class="axis-label">{{ bar.label }}</text>
+            </ng-container>
+          </svg>
+          <span class="axis-title">Payment amount (₹)</span>
+          <div class="chart-legend" *ngIf="vm.paymentsChart.series.length">
+            <span class="legend-item" *ngFor="let series of vm.paymentsChart.series">
+              <i [style.backgroundColor]="series.color"></i>{{ series.name }}
+            </span>
+          </div>
+        </article>
+      </section>
+
+      <section class="summary-section">
+        <div class="section-heading">
+          <h2>Client Summary</h2>
+          <span>Balance convention: positive = credit, negative = due</span>
+        </div>
+        <div class="table-wrap" *ngIf="vm.clients.length; else noClients">
+          <table>
+            <thead>
+              <tr>
+                <th>Client Name</th>
+                <th>Sales</th>
+                <th>Payments</th>
+                <th>Current Balance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let client of vm.clients">
+                <td>
+                  <button type="button" class="client-link" (click)="openClientLedger(client.id)" [attr.aria-label]="'Open ledger for ' + client.name">
+                    {{ client.name }}
+                  </button>
+                </td>
+                <td>{{ client.sales | currency:'INR':'symbol':'1.2-2' }}</td>
+                <td>{{ client.payments | currency:'INR':'symbol':'1.2-2' }}</td>
+                <td [class.due-value]="client.balance < 0" [class.credit-value]="client.balance > 0">
+                  {{ client.balance | currency:'INR':'symbol':'1.2-2' }}
+                </td>
+                <td>
+                  <span class="balance-status" [class.due]="client.status === 'Due'" [class.credit]="client.status === 'Credit'">
+                    {{ client.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noClients>
+          <div class="table-empty">No clients found.</div>
+        </ng-template>
+      </section>
+    </ng-container>
+  </ng-container>
+</main>

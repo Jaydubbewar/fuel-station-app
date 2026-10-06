@@ -1,9 +1,38 @@
-<nav class="top-nav">
-  <div class="brand">⛽ Fuel Station</div>
-  <div class="links">
-    <a routerLink="/new-bill" routerLinkActive="active">New Bill</a>
-    <a routerLink="/new-client" routerLinkActive="active">New Client</a>
-    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-  </div>
-</nav>
+@if (user$ | async) {
+  <nav class="top-nav">
+    <div class="nav-heading">
+      <div class="brand">⛽ Fuel Station</div>
+      <button
+        type="button"
+        class="menu-toggle"
+        [attr.aria-expanded]="isMenuOpen"
+        aria-controls="primary-navigation"
+        [attr.aria-label]="isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'"
+        (click)="toggleMenu()">
+        <span aria-hidden="true">☰</span>
+        <span>Menu</span>
+      </button>
+    </div>
+    <div id="primary-navigation" class="links" [class.open]="isMenuOpen">
+      <a routerLink="/home" routerLinkActive="active" (click)="closeMenu()">Home</a>
+      <a routerLink="/new-bill" routerLinkActive="active" (click)="closeMenu()">New Bill</a>
+      <a routerLink="/new-payment" routerLinkActive="active" (click)="closeMenu()">New Payment</a>
+      <a routerLink="/new-client" routerLinkActive="active" (click)="closeMenu()">New Client</a>
+      <a routerLink="/clients" routerLinkActive="active" (click)="closeMenu()">Clients</a>
+      <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMenu()">Ledger Dashboard</a>
+      <button type="button" class="export-backup" [disabled]="isExporting" (click)="exportBackup(); closeMenu()">
+        {{ isExporting ? 'Exporting…' : 'Export Backup' }}
+      </button>
+      <button type="button" class="logout" (click)="closeMenu(); logout()">Logout</button>
+    </div>
+    <div class="export-status" aria-live="polite">
+      @if (exportSuccess) {
+        <span class="export-success" role="status">{{ exportSuccess }}</span>
+      }
+      @if (exportError) {
+        <span class="export-error" role="alert">{{ exportError }}</span>
+      }
+    </div>
+  </nav>
+}
 <router-outlet></router-outlet>

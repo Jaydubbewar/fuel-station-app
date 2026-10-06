@@ -1,5 +1,7 @@
 <div class="page">
-  <h1>New Client</h1>
+  <h1>{{ isEditMode ? 'Edit Client' : 'New Client' }}</h1>
+
+  <p class="error" *ngIf="loadingClient">Loading client...</p>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="card">
     <div class="grid">
@@ -12,8 +14,8 @@
       </label>
 
       <label class="field">
-        <span>Mobile</span>
-        <input type="tel" formControlName="mobile" placeholder="Enter mobile number" />
+        <span>Phone</span>
+        <input type="tel" formControlName="phone" placeholder="Enter phone number" />
       </label>
 
       <label class="field full-width">
@@ -22,27 +24,64 @@
       </label>
 
       <label class="field">
-        <span>GST Number *</span>
-        <input type="text" formControlName="gstNumber" placeholder="Enter GST number" required />
-        <small class="validation" *ngIf="form.controls.gstNumber.touched && form.controls.gstNumber.invalid">
-          GST number is required.
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="Enter email address" />
+        <small class="validation" *ngIf="form.controls.email.touched && form.controls.email.invalid">
+          Enter a valid email address.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>GST Number</span>
+        <input type="text" formControlName="gstNumber" placeholder="Enter GST number" />
+      </label>
+
+      <label class="field">
+        <span>Default Discount (₹/L)</span>
+        <input type="number" formControlName="defaultDiscountPerLiter" step="0.01" min="0" />
+        <small class="validation" *ngIf="form.controls.defaultDiscountPerLiter.touched && form.controls.defaultDiscountPerLiter.invalid">
+          Default discount must be zero or greater.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Default TDS Rate</span>
+        <input type="number" formControlName="defaultTdsRate" step="any" min="0" />
+        <small>0.001 = 0.1%</small>
+        <small class="validation" *ngIf="form.controls.defaultTdsRate.touched && form.controls.defaultTdsRate.invalid">
+          Default TDS rate must be zero or greater.
         </small>
       </label>
 
       <label class="field">
         <span>Opening Balance (₹)</span>
         <input type="number" formControlName="openingBalance" step="0.01" />
+        <small>Positive = client credit | Negative = amount due from client</small>
+        <small class="validation" *ngIf="form.controls.openingBalance.touched && form.controls.openingBalance.invalid">
+          Opening balance is required.
+        </small>
       </label>
 
-      <label class="active-field">
-        <input type="checkbox" formControlName="isActive" />
-        <span>Active client</span>
+      <label class="field">
+        <span>Opening Balance Date</span>
+        <input type="date" formControlName="openingBalanceDate" />
+        <small class="validation" *ngIf="form.controls.openingBalanceDate.touched && form.controls.openingBalanceDate.invalid">
+          Opening balance date is required.
+        </small>
+      </label>
+
+      <label class="field full-width">
+        <span>Opening Balance Note</span>
+        <textarea formControlName="openingBalanceNote" rows="2" placeholder="Optional note"></textarea>
       </label>
     </div>
 
-    <button type="submit" class="submit-btn" [disabled]="submitting">
-      {{ submitting ? 'Saving...' : 'Create Client' }}
-    </button>
+    <div class="form-actions">
+      <a routerLink="/clients" class="cancel-btn">Cancel</a>
+      <button type="submit" class="submit-btn" [disabled]="submitting || loadingClient">
+        {{ submitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Create Client') }}
+      </button>
+    </div>
 
     <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
     <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>

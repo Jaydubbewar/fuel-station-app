@@ -5,3 +5,44 @@ body {
   background: #f5f6f8;
   color: #101828;
 }
+
+@media (max-width: 1023px) {
+  app-home .page .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  app-home .page .charts { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  app-home .page.page { padding: 26px 18px; }
+  app-home .page .chart-card { padding: 16px; }
+}
+
+@media (max-width: 767px) {
+  app-home .page.page { padding: 20px 14px; }
+  app-home .page .filters { padding: 12px; }
+  app-home .page .field { width: 100%; min-width: 0; }
+  app-home .page .field select,
+  app-home .page .field input { width: 100%; min-width: 0; min-height: 44px; }
+  app-home .page .apply-btn { min-height: 44px; }
+  app-home .page .chart-filters { justify-content: stretch; }
+  app-home .page .charts { gap: 12px; }
+  app-home .page .chart-card { padding: 14px 10px 12px; }
+  app-home .page .legend-item { max-width: 100%; overflow-wrap: anywhere; }
+  app-home .page .kpis { grid-template-columns: 1fr; }
+  app-home .page .kpi-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+  }
+  app-home .page .kpi-card span { flex: 1 1 auto; min-width: 0; }
+  app-home .page .kpi-card strong { flex: 0 1 55%; font-size: 1rem; text-align: right; white-space: nowrap; }
+  app-home .page .section-heading { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 380px) {
+  app-home .page.page { padding-right: 10px; padding-left: 10px; }
+  app-home .page .kpis { gap: 8px; }
+  app-home .page .kpi-card { padding: 10px; }
+  app-home .page .kpi-card span { font-size: 0.68rem; }
+}

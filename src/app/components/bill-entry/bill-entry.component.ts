@@ -1,13 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable, Subscription, shareReplay } from 'rxjs';
 import { ClientService } from '../../services/client.service';
 import { TransactionService } from '../../services/transaction.service';
 import { Client } from '../../models/transaction.model';
 import { calculateTransaction } from '../../utils/calculations';
 import { getFirebaseConfigurationError } from '../../utils/firebase-configuration';
 import { environment } from '../../../environments/environment';
+import { TransactionRecord } from '../../models/transaction.model';
 
 function todayIso(): string {
   const d = new Date();
@@ -23,12 +24,16 @@ function todayIso(): string {
   templateUrl: './bill-entry.component.html',
   styleUrl: './bill-entry.component.scss'
 })
-export class BillEntryComponent implements OnInit {
+export class BillEntryComponent implements OnDestroy, OnInit, OnChanges {
   private fb = inject(FormBuilder);
   private clientService = inject(ClientService);
   private transactionService = inject(TransactionService);
 
   clients$!: Observable<Client[]>;
+  private clientSelectionSubscription?: Subscription;
+  @Input() transactionToEdit: TransactionRecord | null = null;
+  @Output() transactionSaved = new EventEmitter<void>();
+  @Output() cancelled = new EventEmitter<void>();
   submitting = false;
   successMessage = '';
   errorMessage = '';
@@ -39,13 +44,52 @@ export class BillEntryComponent implements OnInit {
     clientId: ['', Validators.required],
     quantity: [0, [Validators.required, Validators.min(0.01)]],
     rate: [environment.defaults.rate, [Validators.required, Validators.min(0)]],
-    discountPct: [environment.defaults.discountPct, [Validators.required, Validators.min(0)]],
-    tdsPct: [environment.defaults.tdsPct, [Validators.required, Validators.min(0)]],
-    creditAmount: [0, [Validators.min(0)]]
+    discountPerLiter: [environment.defaults.discountPerLiter, [Validators.required, Validators.min(0)]],
+    tdsRate: [environment.defaults.tdsRate, [Validators.required, Validators.min(0)]]
   });
 
   ngOnInit(): void {
-    this.clients$ = this.clientService.getClients();
+    this.clients$ = this.clientService.getClients().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    if (!this.transactionToEdit) {
+      this.clientSelectionSubscription = this.form.controls.clientId.valueChanges.subscribe(clientId => {
+        if (!this.transactionToEdit && clientId) void this.applyClientDefaults(clientId);
+      });
+      const selectedClientId = this.form.controls.clientId.value;
+      if (selectedClientId) void this.applyClientDefaults(selectedClientId);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.clientSelectionSubscription?.unsubscribe();
+  }
+
+  private async applyClientDefaults(clientId: string): Promise<void> {
+    const clients = await firstValueFrom(this.clients$);
+    if (this.transactionToEdit || this.form.controls.clientId.value !== clientId) return;
+
+    const client = clients.find(item => item.id === clientId);
+    if (!client) return;
+
+    this.form.patchValue({
+      discountPerLiter: client.defaultDiscountPerLiter ?? environment.defaults.discountPerLiter,
+      tdsRate: client.defaultTdsRate ?? environment.defaults.tdsRate
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['transactionToEdit'] || !this.transactionToEdit) return;
+
+    const transaction = this.transactionToEdit;
+    const date = transaction.transactionDate.toDate();
+    this.form.patchValue({
+      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      billNo: transaction.billNo,
+      clientId: transaction.clientId,
+      quantity: transaction.quantity,
+      rate: transaction.rate,
+      discountPerLiter: transaction.quantity === 0 ? 0 : transaction.discount / transaction.quantity,
+      tdsRate: transaction.tdsRate
+    });
   }
 
   /** Live preview of the calculated columns, recomputed on every keystroke. */
@@ -54,9 +98,9 @@ export class BillEntryComponent implements OnInit {
     return calculateTransaction({
       quantity: Number(v.quantity) || 0,
       rate: Number(v.rate) || 0,
-      discountPct: Number(v.discountPct) || 0,
-      tdsPct: Number(v.tdsPct) || 0,
-      creditAmount: Number(v.creditAmount) || 0,
+      discountPerLiter: Number(v.discountPerLiter) || 0,
+      tdsRate: Number(v.tdsRate) || 0,
+      creditAmount: 0,
       previousBalance: 0 // client's real previous balance is applied server-side on submit
     });
   }
@@ -81,19 +125,29 @@ export class BillEntryComponent implements OnInit {
 
     try {
       const v = this.form.getRawValue();
-      const clients = await firstValueFrom(this.clients$);
-      const client = clients.find((c) => c.id === v.clientId);
+      const preview = this.preview;
+      if (this.transactionToEdit) {
+        await this.transactionService.updateTransaction(this.transactionToEdit.id, {
+          transactionDate: new Date(`${v.date}T00:00:00`),
+          billNo: v.billNo,
+          quantity: Number(v.quantity),
+          rate: Number(v.rate),
+          discount: preview.discountAmount,
+          tdsRate: Number(v.tdsRate)
+        });
+        this.successMessage = `Bill ${v.billNo} updated successfully.`;
+        this.transactionSaved.emit();
+        return;
+      }
 
-      await this.transactionService.addTransaction({
-        date: v.date,
+      await this.transactionService.createTransaction({
+        transactionDate: new Date(`${v.date}T00:00:00`),
         billNo: v.billNo,
         clientId: v.clientId,
-        clientName: client?.name ?? '',
         quantity: Number(v.quantity),
         rate: Number(v.rate),
-        discountPct: Number(v.discountPct),
-        tdsPct: Number(v.tdsPct),
-        creditAmount: Number(v.creditAmount) || 0
+        discount: preview.discountAmount,
+          tdsRate: Number(v.tdsRate)
       });
 
       this.successMessage = `Bill ${v.billNo} saved successfully.`;
@@ -103,9 +157,8 @@ export class BillEntryComponent implements OnInit {
         clientId: v.clientId, // keep same client selected for rapid repeat entry
         quantity: 0,
         rate: environment.defaults.rate,
-        discountPct: environment.defaults.discountPct,
-        tdsPct: environment.defaults.tdsPct,
-        creditAmount: 0
+        discountPerLiter: environment.defaults.discountPerLiter,
+        tdsRate: environment.defaults.tdsRate
       });
     } catch (err: any) {
       this.errorMessage = err?.message || 'Something went wrong while saving the bill.';

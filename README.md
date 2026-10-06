@@ -25,7 +25,7 @@ Discount Amount   = Amount x Discount% / 100
 Amount after Disc = Amount - Discount Amount
 TDS Amount        = (Amount after Disc) x TDS% / 100
 After TDS Amount  = Amount after Disc - TDS Amount
-New Debit Balance = Previous Balance + After TDS Amount - Credit Amount
+New Debit Balance = Previous Balance - After TDS Amount + Credit Amount
 ```
 This lives in `src/app/utils/calculations.ts` — it's the single place to
 edit if the formula needs to change.

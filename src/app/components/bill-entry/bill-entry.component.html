@@ -1,5 +1,5 @@
 <div class="page">
-  <h1>New Bill Entry</h1>
+  <h1>{{ transactionToEdit ? 'Edit Bill' : 'New Bill Entry' }}</h1>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="card">
     <div class="grid">
@@ -16,7 +16,7 @@
         </small>
       </label>
 
-      <label class="field client-field">
+      <label class="field client-field" *ngIf="!transactionToEdit">
         <span>Client</span>
         <select formControlName="clientId">
           <option value="" disabled>Select client</option>
@@ -41,44 +41,47 @@
       </label>
 
       <label class="field">
-        <span>Discount %</span>
-        <input type="number" formControlName="discountPct" step="0.01" min="0" />
+        <span>Discount (₹/L)</span>
+        <input type="number" formControlName="discountPerLiter" step="0.01" min="0" />
+        <small>Initially loaded from the selected client's defaults; change for this bill as needed.</small>
+        <small class="validation" *ngIf="form.controls.discountPerLiter.touched && form.controls.discountPerLiter.invalid">
+          Discount per liter must be zero or greater.
+        </small>
       </label>
 
       <label class="field">
-        <span>TDS %</span>
-        <input type="number" formControlName="tdsPct" step="0.01" min="0" />
+        <span>TDS Rate</span>
+        <input type="number" formControlName="tdsRate" step="any" min="0" />
+        <small>Initially loaded from the selected client's defaults; change for this bill as needed. Enter a decimal fraction; 0.001 = 0.1%.</small>
+        <small class="validation" *ngIf="form.controls.tdsRate.touched && form.controls.tdsRate.invalid">
+          TDS rate must be zero or greater.
+        </small>
       </label>
 
-      <label class="field">
-        <span>Credit Amount (₹)</span>
-        <input type="number" formControlName="creditAmount" step="0.01" min="0" />
-      </label>
     </div>
 
     <div class="preview">
       <div class="preview-item">
         <span>Amount</span>
-        <strong>₹{{ preview.amount.toFixed(2) }}</strong>
+        <strong>₹{{ preview.grossAmount | number:'1.2-2' }}</strong>
       </div>
       <div class="preview-item">
         <span>Discount Amt</span>
-        <strong>₹{{ preview.discountAmount.toFixed(2) }}</strong>
+        <strong>₹{{ preview.discountAmount | number:'1.2-2' }}</strong>
       </div>
       <div class="preview-item">
         <span>TDS Amt</span>
-        <strong>₹{{ preview.tdsAmount.toFixed(2) }}</strong>
+        <strong>₹{{ preview.tdsAmount | number:'1.2-2' }}</strong>
       </div>
       <div class="preview-item highlight">
         <span>After TDS Amount</span>
-        <strong>₹{{ preview.afterTdsAmount.toFixed(2) }}</strong>
+        <strong>₹{{ preview.afterTdsAmount | number:'1.2-2' }}</strong>
       </div>
     </div>
-    <p class="note">Debit balance shown after saving — it depends on the client's running total.</p>
-
     <button type="submit" class="submit-btn" [disabled]="submitting">
-      {{ submitting ? 'Saving...' : 'Save Bill' }}
+      {{ submitting ? 'Saving...' : (transactionToEdit ? 'Save Changes' : 'Save Bill') }}
     </button>
+    <button *ngIf="transactionToEdit" type="button" class="cancel-btn" (click)="cancelled.emit()">Cancel</button>
 
     <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
     <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
